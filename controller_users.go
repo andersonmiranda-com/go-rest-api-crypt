@@ -66,7 +66,7 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	// ------------------------------------------------------------------------------
 	// Get UPK
 
-	upkSeed, err := getUserPrivateKey(refId)
+	upkSeed, err := getUserPrivateKeySeed(refId)
 	if err != nil {
 		response := ErrorResponse{Status: "Error", Error: "Cannot get UPK", ExecutionTime: time.Since(processStart).Seconds() * 1000}
 		json.NewEncoder(w).Encode(response)
@@ -117,12 +117,12 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	login := createHash(createHash(string(user.Email) + createHash(string(user.Password)) + createHash(string(VPK))))
 
 	refId := createHash(createHash(userId) + createHash(string(VPK)))
-	upkSeed := createHash32(createHash(refId) + createHash(string(VPK)))
+	upkSeed := createHash(createHash(refId) + createHash(string(VPK)))
 
 	// ------------------------------------------------------------------------------
 	// Save UPK
 
-	_, err := saveUserPrivateKey(refId, upkSeed)
+	_, err := saveUserPrivateKeySeed(refId, upkSeed)
 	if err != nil {
 		response := ErrorResponse{Status: "Error", Error: "Cannot save UPK Seed", ExecutionTime: time.Since(processStart).Seconds() * 1000}
 		json.NewEncoder(w).Encode(response)
@@ -157,7 +157,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func saveUserPrivateKey(refId string, thisUpk string) (int, error) {
+func saveUserPrivateKeySeed(refId string, thisUpk string) (int, error) {
 
 	/*
 		// ------------------------------------------------------------------------------
@@ -191,7 +191,7 @@ func saveUserPrivateKey(refId string, thisUpk string) (int, error) {
 
 }
 
-func getUserPrivateKey(refId string) ([]byte, error) {
+func getUserPrivateKeySeed(refId string) ([]byte, error) {
 
 	/*
 		// ------------------------------------------------------------------------------
