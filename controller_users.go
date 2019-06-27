@@ -32,7 +32,7 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	// ------------------------------------------------------------------------------
 	// Get User
 
-	row, err := db.Query("SELECT email, name, surnames FROM valentium.users WHERE userId = ?", userId)
+	row, err := db.Query("SELECT oe, rn, bn, dc FROM valentium.users WHERE ou = ?", userId)
 	if err != nil {
 		response := ErrorResponse{Status: "Error", Error: err.Error(), ExecutionTime: time.Since(processStart).Seconds() * 1000}
 		json.NewEncoder(w).Encode(response)
@@ -44,9 +44,10 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	count := 0
 
 	var email, name, surnames []byte
+	var createdDate string
 
 	if row.Next() {
-		err = row.Scan(&email, &name, &surnames)
+		err = row.Scan(&email, &name, &surnames, &createdDate)
 		count += 1
 		if err != nil {
 			response := ErrorResponse{Status: "Error", Error: err.Error(), ExecutionTime: time.Since(processStart).Seconds() * 1000}
@@ -83,7 +84,7 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	user.Email = decrypt(email, []byte(upk))
 	user.Name = decrypt(name, []byte(upk))
 	user.Surnames = decrypt(surnames, []byte(upk))
-
+	user.CreatedDate = createdDate
 	//log.Println("user", user)
 	//log.Println("Execution Time:", time.Since(processStart))
 
@@ -97,12 +98,7 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 func createUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var user struct {
-		Email    string `json:"email"`
-		Name     string `json:"name"`
-		Surnames string `json:"surnames"`
-		Password string `json:"password"`
-	}
+	var user User
 
 	processStart := time.Now()
 
@@ -143,7 +139,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 
 	db := dbConn()
 
-	_, err = db.Exec("INSERT INTO valentium.users (userId, email, emailHash, login, name, surnames, createdDate) VALUES (?,?,?,?,?,?,?)", userId, email, emailHash, login, name, surnames, t.String())
+	_, err = db.Exec("INSERT INTO valentium.users (ou, oe, oh, ca, rn, bn, dc) VALUES (?,?,?,?,?,?,?)", userId, email, emailHash, login, name, surnames, t.String())
 	if err != nil {
 		response := ErrorResponse{Status: "OK", Error: err.Error(), ExecutionTime: time.Since(processStart).Seconds() * 1000}
 		json.NewEncoder(w).Encode(response)

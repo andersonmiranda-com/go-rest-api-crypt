@@ -7,6 +7,7 @@ import (
 )
 
 /*
+
 const (
 	DBDriver   = "mysql"
 	DBName     = "valentium"
@@ -16,7 +17,6 @@ const (
 
 	MongoDBUri = "mongodb://localhost:27017"
 )
-
 */
 
 const (

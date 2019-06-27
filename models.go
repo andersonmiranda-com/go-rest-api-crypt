@@ -6,8 +6,8 @@ type User struct {
 	UserId      string `json:"userId"`
 	Email       string `json:"email"`
 	EmailHash   string `json:"emailHash"`
+	Password    string `json:"password"`
 	Login       string `json:"login"`
-	LicenseId   string `json:"licenseId"`
 	Name        string `json:"name"`
 	Surnames    string `json:"surnames"`
 	Mobile      string `json:"mobile"`
