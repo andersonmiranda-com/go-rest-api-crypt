@@ -19,6 +19,7 @@ func main() {
 	//r.HandleFunc("/users", getUsers).Methods("GET")
 	r.HandleFunc("/users/{userId}", getUser).Methods("GET")
 	r.HandleFunc("/users", createUser).Methods("POST")
+	r.HandleFunc("/users/login", loginUser).Methods("POST")
 	//r.HandleFunc("/users/{id}", updateUser).Methods("PUT")
 	//r.HandleFunc("/users/{id}", deleteUser).Methods("DELETE")
 

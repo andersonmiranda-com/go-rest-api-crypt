@@ -18,6 +18,118 @@ import (
 	json.NewEncoder(w).Encode(users)
 } */
 
+// Add new user
+func createUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var user User
+
+	processStart := time.Now()
+
+	VPK := getPublicKey() // get Public Key
+
+	_ = json.NewDecoder(r.Body).Decode(&user)
+
+	t := time.Now()
+
+	userId := createHash(createHash(string(user.Email)+createHash(string(VPK))) + t.String())
+	emailHash := createHash(createHash(string(user.Email) + createHash(string(VPK))))
+	login := createHash(createHash(string(user.Email) + createHash(string(user.Password)) + createHash(string(VPK))))
+
+	refId := createHash(createHash(userId) + createHash(string(VPK)))
+	upkSeed := createHash(createHash(refId) + createHash(string(VPK)))
+
+	// ------------------------------------------------------------------------------
+	// Save UPK
+
+	_, err := saveUserPrivateKeySeed(refId, upkSeed)
+	if err != nil {
+		response := ErrorResponse{Status: "Error", Error: "Cannot save UPK Seed", ExecutionTime: time.Since(processStart).Seconds() * 1000}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// ------------------------------------------------------------------------------
+	// Encrypt
+
+	upk := createHash32(upkSeed + createHash(string(VPK)))
+
+	email := encrypt([]byte(user.Email), []byte(upk))
+	name := encrypt([]byte(user.Name), []byte(upk))
+	surnames := encrypt([]byte(user.Surnames), []byte(upk))
+
+	// ------------------------------------------------------------------------------
+	// Save User
+
+	db := dbConn()
+
+	_, err = db.Exec("INSERT INTO valentium.users (ou, oe, oh, ca, rn, bn, dc) VALUES (?,?,?,?,?,?,?)", userId, email, emailHash, login, name, surnames, t.String())
+	if err != nil {
+		response := ErrorResponse{Status: "OK", Error: err.Error(), ExecutionTime: time.Since(processStart).Seconds() * 1000}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+	defer db.Close()
+
+	response := GenericResponse{Status: "OK", Data: map[string]string{"userId": userId}, ExecutionTime: time.Since(processStart).Seconds() * 1000}
+
+	json.NewEncoder(w).Encode(response)
+
+}
+
+// Add new user
+func loginUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var user User
+	processStart := time.Now()
+	VPK := getPublicKey() // get Public Key
+	_ = json.NewDecoder(r.Body).Decode(&user)
+	login := createHash(createHash(string(user.Email) + createHash(string(user.Password)) + createHash(string(VPK))))
+
+	// ------------------------------------------------------------------------------
+	// Get User
+
+	db := dbConn()
+	defer db.Close()
+
+	row, err := db.Query("SELECT ou FROM valentium.users WHERE ca = ?", login)
+	if err != nil {
+		response := ErrorResponse{Status: "Error", Error: err.Error(), ExecutionTime: time.Since(processStart).Seconds() * 1000}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+	defer row.Close()
+
+	count := 0
+
+	if row.Next() {
+		err = row.Scan(&user.UserId)
+		count += 1
+		if err != nil {
+			response := ErrorResponse{Status: "Error", Error: err.Error(), ExecutionTime: time.Since(processStart).Seconds() * 1000}
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+	}
+
+	if count == 0 {
+		response := ErrorResponse{Status: "Error", Error: "Invalid Login", ExecutionTime: time.Since(processStart).Seconds() * 1000}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// ------------------------------------------------------------------------------
+	// Generate JWT
+
+	token := ""
+
+	response := GenericResponse{Status: "OK", Data: map[string]string{"userId": user.UserId, "token": token}, ExecutionTime: time.Since(processStart).Seconds() * 1000}
+
+	json.NewEncoder(w).Encode(response)
+
+}
+
 // Get single user
 func getUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -89,65 +201,6 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	//log.Println("Execution Time:", time.Since(processStart))
 
 	response := UserResponse{Status: "OK", Data: user, ExecutionTime: time.Since(processStart).Seconds() * 1000}
-
-	json.NewEncoder(w).Encode(response)
-
-}
-
-// Add new user
-func createUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	var user User
-
-	processStart := time.Now()
-
-	VPK := getPublicKey() // get Public Key
-
-	_ = json.NewDecoder(r.Body).Decode(&user)
-
-	t := time.Now()
-
-	userId := createHash(createHash(string(user.Email)+createHash(string(VPK))) + t.String())
-	emailHash := createHash(createHash(string(user.Email) + createHash(string(VPK))))
-	login := createHash(createHash(string(user.Email) + createHash(string(user.Password)) + createHash(string(VPK))))
-
-	refId := createHash(createHash(userId) + createHash(string(VPK)))
-	upkSeed := createHash(createHash(refId) + createHash(string(VPK)))
-
-	// ------------------------------------------------------------------------------
-	// Save UPK
-
-	_, err := saveUserPrivateKeySeed(refId, upkSeed)
-	if err != nil {
-		response := ErrorResponse{Status: "Error", Error: "Cannot save UPK Seed", ExecutionTime: time.Since(processStart).Seconds() * 1000}
-		json.NewEncoder(w).Encode(response)
-		return
-	}
-
-	// ------------------------------------------------------------------------------
-	// Encrypt
-
-	upk := createHash32(upkSeed + createHash(string(VPK)))
-
-	email := encrypt([]byte(user.Email), []byte(upk))
-	name := encrypt([]byte(user.Name), []byte(upk))
-	surnames := encrypt([]byte(user.Surnames), []byte(upk))
-
-	// ------------------------------------------------------------------------------
-	// Save User
-
-	db := dbConn()
-
-	_, err = db.Exec("INSERT INTO valentium.users (ou, oe, oh, ca, rn, bn, dc) VALUES (?,?,?,?,?,?,?)", userId, email, emailHash, login, name, surnames, t.String())
-	if err != nil {
-		response := ErrorResponse{Status: "OK", Error: err.Error(), ExecutionTime: time.Since(processStart).Seconds() * 1000}
-		json.NewEncoder(w).Encode(response)
-		return
-	}
-	defer db.Close()
-
-	response := GenericResponse{Status: "OK", Data: map[string]string{"userId": userId}, ExecutionTime: time.Since(processStart).Seconds() * 1000}
 
 	json.NewEncoder(w).Encode(response)
 
