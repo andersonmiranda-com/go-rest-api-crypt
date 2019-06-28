@@ -44,8 +44,8 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 
 	_, err := saveUserPrivateKeySeed(refId, upkSeed)
 	if err != nil {
-		response := ErrorResponse{Status: "Error", Error: "Cannot save UPK Seed", ExecutionTime: time.Since(processStart).Seconds() * 1000}
-		json.NewEncoder(w).Encode(response)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Cannot save UPK Seed"))
 		return
 	}
 
@@ -65,8 +65,8 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 
 	_, err = db.Exec("INSERT INTO valentium.users (ou, oe, oh, ca, rn, bn, dc) VALUES (?,?,?,?,?,?,?)", userId, email, emailHash, login, name, surnames, t.String())
 	if err != nil {
-		response := ErrorResponse{Status: "OK", Error: err.Error(), ExecutionTime: time.Since(processStart).Seconds() * 1000}
-		json.NewEncoder(w).Encode(response)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
 		return
 	}
 	defer db.Close()
@@ -81,10 +81,17 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 func loginUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var user User
 	processStart := time.Now()
-	VPK := getPublicKey() // get Public Key
+	var user User
 	_ = json.NewDecoder(r.Body).Decode(&user)
+
+	if len(user.Email) == 0 || len(user.Password) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Please provide name and password"))
+		return
+	}
+
+	VPK := getPublicKey() // get Public Key
 	login := createHash(createHash(string(user.Email) + createHash(string(user.Password)) + createHash(string(VPK))))
 
 	// ------------------------------------------------------------------------------
@@ -95,8 +102,8 @@ func loginUser(w http.ResponseWriter, r *http.Request) {
 
 	row, err := db.Query("SELECT ou FROM valentium.users WHERE ca = ?", login)
 	if err != nil {
-		response := ErrorResponse{Status: "Error", Error: err.Error(), ExecutionTime: time.Since(processStart).Seconds() * 1000}
-		json.NewEncoder(w).Encode(response)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
 		return
 	}
 	defer row.Close()
@@ -107,15 +114,15 @@ func loginUser(w http.ResponseWriter, r *http.Request) {
 		err = row.Scan(&user.UserId)
 		count += 1
 		if err != nil {
-			response := ErrorResponse{Status: "Error", Error: err.Error(), ExecutionTime: time.Since(processStart).Seconds() * 1000}
-			json.NewEncoder(w).Encode(response)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
 			return
 		}
 	}
 
 	if count == 0 {
-		response := ErrorResponse{Status: "Error", Error: "Invalid Login", ExecutionTime: time.Since(processStart).Seconds() * 1000}
-		json.NewEncoder(w).Encode(response)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid login"))
 		return
 	}
 
@@ -123,9 +130,7 @@ func loginUser(w http.ResponseWriter, r *http.Request) {
 	// Generate JWT
 
 	token := ""
-
 	response := GenericResponse{Status: "OK", Data: map[string]string{"userId": user.UserId, "token": token}, ExecutionTime: time.Since(processStart).Seconds() * 1000}
-
 	json.NewEncoder(w).Encode(response)
 
 }
@@ -146,8 +151,8 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 
 	row, err := db.Query("SELECT oe, rn, bn, dc FROM valentium.users WHERE ou = ?", userId)
 	if err != nil {
-		response := ErrorResponse{Status: "Error", Error: err.Error(), ExecutionTime: time.Since(processStart).Seconds() * 1000}
-		json.NewEncoder(w).Encode(response)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
 		return
 	}
 	defer row.Close()
@@ -162,15 +167,15 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 		err = row.Scan(&email, &name, &surnames, &createdDate)
 		count += 1
 		if err != nil {
-			response := ErrorResponse{Status: "Error", Error: err.Error(), ExecutionTime: time.Since(processStart).Seconds() * 1000}
-			json.NewEncoder(w).Encode(response)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
 			return
 		}
 	}
 
 	if count == 0 {
-		response := ErrorResponse{Status: "Error", Error: "User not found", ExecutionTime: time.Since(processStart).Seconds() * 1000}
-		json.NewEncoder(w).Encode(response)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("User not found"))
 		return
 	}
 
@@ -181,8 +186,8 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 
 	upkSeed, err := getUserPrivateKeySeed(refId)
 	if err != nil {
-		response := ErrorResponse{Status: "Error", Error: "Cannot get UPK", ExecutionTime: time.Since(processStart).Seconds() * 1000}
-		json.NewEncoder(w).Encode(response)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Cannot get UPK"))
 		return
 	}
 

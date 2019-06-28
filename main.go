@@ -13,17 +13,21 @@ var VPK string
 func main() {
 
 	// Init router
-	r := mux.NewRouter()
+	r := ConfigureRouter()
 
-	// Route handles & endpoints
+	// Start server
+	log.Fatal(http.ListenAndServe(":5000", r))
+
+}
+
+func ConfigureRouter() *mux.Router {
+	r := mux.NewRouter()
 	//r.HandleFunc("/users", getUsers).Methods("GET")
 	r.HandleFunc("/users/{userId}", getUser).Methods("GET")
 	r.HandleFunc("/users", createUser).Methods("POST")
 	r.HandleFunc("/users/login", loginUser).Methods("POST")
 	//r.HandleFunc("/users/{id}", updateUser).Methods("PUT")
 	//r.HandleFunc("/users/{id}", deleteUser).Methods("DELETE")
-
-	// Start server
-	log.Fatal(http.ListenAndServe(":5000", r))
+	return r
 
 }
