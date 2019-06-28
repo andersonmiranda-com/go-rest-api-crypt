@@ -26,6 +26,7 @@ func ConfigureRouter() *mux.Router {
 	r.HandleFunc("/users/login", authenticate).Methods("POST")
 	r.HandleFunc("/users", createUser).Methods("POST")
 	r.HandleFunc("/users/{userId}", authMiddleware(getUser)).Methods("GET")
+	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("./static"))))
 	//r.HandleFunc("/users/{id}", updateUser).Methods("PUT")
 	//r.HandleFunc("/users/{id}", deleteUser).Methods("DELETE")
 	return r

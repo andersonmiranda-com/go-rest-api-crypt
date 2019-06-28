@@ -1,12 +1,20 @@
 package main
 
-import jwt "github.com/dgrijalva/jwt-go"
+import (
+	"time"
+
+	jwt "github.com/dgrijalva/jwt-go"
+)
 
 func getToken(userId string) (string, error) {
 	VPK := getPublicKey()
+
+	expirationTime := time.Now().Add(5 * time.Minute).Unix()
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userId": userId,
-	})
+		"exp":    expirationTime})
+
 	tokenString, err := token.SignedString(VPK)
 	return tokenString, err
 }

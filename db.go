@@ -24,7 +24,7 @@ const (
 	DBName     = "atalan_api_db1"
 	DBUser     = "atalandb1"
 	DBPassword = "KD3uV8>GaHbMbC"
-	DBURL      = DBUser + ":" + DBPassword + "@tcp(aaimfqs3949pob.cosyme9gqndq.us-east-1.rds.amazonaws.com:3306)/" + DBName
+	DBURL      = DBUser + ":" + DBPassword + "@tcp(aa1ozx7xopaip9a.cosyme9gqndq.us-east-1.rds.amazonaws.com:3306)/" + DBName
 
 	MongoDBUri = "mongodb+srv://atalan:mXyD6H-cut8Gp3U@cluster0-vuqrp.mongodb.net"
 )
