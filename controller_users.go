@@ -44,7 +44,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 
 	_, err := saveUserPrivateKeySeed(refId, upkSeed)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Cannot save UPK Seed"))
 		return
 	}
@@ -65,7 +65,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 
 	_, err = db.Exec("INSERT INTO valentium.users (ou, oe, oh, ca, rn, bn, dc) VALUES (?,?,?,?,?,?,?)", userId, email, emailHash, login, name, surnames, t.String())
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}
@@ -77,81 +77,34 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// Add new user
-func loginUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	processStart := time.Now()
-	var user User
-	_ = json.NewDecoder(r.Body).Decode(&user)
-
-	if len(user.Email) == 0 || len(user.Password) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Please provide name and password"))
-		return
-	}
-
-	VPK := getPublicKey() // get Public Key
-	login := createHash(createHash(string(user.Email) + createHash(string(user.Password)) + createHash(string(VPK))))
-
-	// ------------------------------------------------------------------------------
-	// Get User
-
-	db := dbConn()
-	defer db.Close()
-
-	row, err := db.Query("SELECT ou FROM valentium.users WHERE ca = ?", login)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
-		return
-	}
-	defer row.Close()
-
-	count := 0
-
-	if row.Next() {
-		err = row.Scan(&user.UserId)
-		count += 1
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
-			return
-		}
-	}
-
-	if count == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid login"))
-		return
-	}
-
-	// ------------------------------------------------------------------------------
-	// Generate JWT
-
-	token := ""
-	response := GenericResponse{Status: "OK", Data: map[string]string{"userId": user.UserId, "token": token}, ExecutionTime: time.Since(processStart).Seconds() * 1000}
-	json.NewEncoder(w).Encode(response)
-
-}
-
 // Get single user
 func getUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	processStart := time.Now()
 
-	VPK := getPublicKey() // get Public Key
 	params := mux.Vars(r) // Gets params
 	userId := params["userId"]
+
+	// ------------------------------------------------------------------------------
+	// Get token and compares
+	tokenUserId := r.Header.Get("userId")
+	if userId != tokenUserId {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Ypu dot have permission to access this data!"))
+		return
+	}
+
+	VPK := getPublicKey() // get Public Key
 	db := dbConn()
 	defer db.Close()
+
 	// ------------------------------------------------------------------------------
 	// Get User
 
 	row, err := db.Query("SELECT oe, rn, bn, dc FROM valentium.users WHERE ou = ?", userId)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}
