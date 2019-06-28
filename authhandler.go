@@ -75,7 +75,7 @@ func authenticate(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func authMiddleware(next func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		tokenString := r.Header.Get("Authorization")
