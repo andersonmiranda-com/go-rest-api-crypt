@@ -16,6 +16,7 @@ func main() {
 	r := ConfigureRouter()
 
 	// Start server
+	log.Println("Starting Valetium API server on port 5000...")
 	log.Fatal(http.ListenAndServe(":5000", r))
 
 }
