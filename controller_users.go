@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/mgo.v2/bson"
@@ -83,17 +82,19 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 
 	processStart := time.Now()
 
-	params := mux.Vars(r) // Gets params
-	userId := params["userId"]
+	//params := mux.Vars(r) // Gets params
+	//userId := params["userId"]
 
 	// ------------------------------------------------------------------------------
 	// Get token and compares
-	tokenUserId := r.Header.Get("userId")
-	if userId != tokenUserId {
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("Ypu dot have permission to access this data!"))
-		return
-	}
+	//tokenUserId := r.Header.Get("userId")
+	//if userId != tokenUserId {
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	w.Write([]byte("You dot have permission to access this data!"))
+	//	return
+	//}
+
+	userId := r.Header.Get("userId")
 
 	VPK := getPublicKey() // get Public Key
 	db := dbConn()
