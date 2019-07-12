@@ -94,6 +94,8 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 
+	// new aproach: uses only userId from JWT header to get user
+
 	userId := r.Header.Get("userId")
 
 	VPK := getPublicKey() // get Public Key

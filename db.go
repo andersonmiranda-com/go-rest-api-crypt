@@ -6,8 +6,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-/*
-
 const (
 	DBDriver   = "mysql"
 	DBName     = "valentium"
@@ -17,8 +15,8 @@ const (
 
 	MongoDBUri = "mongodb://localhost:27017"
 )
-*/
 
+/*
 const (
 	DBDriver   = "mysql"
 	DBName     = "atalan_api_db1"
@@ -28,6 +26,7 @@ const (
 
 	MongoDBUri = "mongodb+srv://atalan:mXyD6H-cut8Gp3U@cluster0-vuqrp.mongodb.net"
 )
+*/
 
 func dbConn() (db *sql.DB) {
 	db, err := sql.Open(DBDriver, DBURL)

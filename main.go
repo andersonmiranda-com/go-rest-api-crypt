@@ -24,7 +24,8 @@ func main() {
 func ConfigureRouter() *mux.Router {
 	r := mux.NewRouter()
 	//r.HandleFunc("/users", getUsers).Methods("GET")
-	r.HandleFunc("/users/login", authenticate).Methods("POST")
+	r.HandleFunc("/auth/email/{email}", checkEmail).Methods("GET")
+	r.HandleFunc("/auth/login", authenticate).Methods("POST")
 	r.HandleFunc("/users", createUser).Methods("POST")
 	r.HandleFunc("/users", authMiddleware(getUser)).Methods("GET")
 	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("./static"))))

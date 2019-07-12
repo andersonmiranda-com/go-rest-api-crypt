@@ -7,9 +7,58 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/mux"
 )
 
-// Add new user
+//check email / pre-auth
+func checkEmail(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	processStart := time.Now()
+
+	params := mux.Vars(r) // Gets params
+	email := params["email"]
+	user := User{}
+	VPK := getPublicKey() // get Public Key
+	emailHash := createHash(createHash(string(email) + createHash(string(VPK))))
+
+	// ------------------------------------------------------------------------------
+	// Get User
+	db := dbConn()
+	defer db.Close()
+
+	row, err := db.Query("SELECT ou FROM valentium.users WHERE oh = ?", emailHash)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	defer row.Close()
+
+	count := 0
+	if row.Next() {
+		err = row.Scan(&user.UserId)
+		count += 1
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+	}
+
+	if count == 0 {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Invalid Email"))
+		return
+	} else {
+		w.WriteHeader(http.StatusOK)
+		response := GenericResponse{Status: "OK", Data: map[string]string{"userId": user.UserId}, ExecutionTime: time.Since(processStart).Seconds() * 1000}
+		json.NewEncoder(w).Encode(response)
+	}
+
+}
+
+// Auth login/pass
 func authenticate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
