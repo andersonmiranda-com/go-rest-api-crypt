@@ -125,8 +125,12 @@ func createHash32(key string) string {
 }
 
 func createHash(key string) string {
-	h := sha256.New()
-	h.Write([]byte(key))
-	hashed := hex.EncodeToString(h.Sum(nil))
+	//h := sha256.New()
+	//h.Write([]byte(key))
+	//hashed := hex.EncodeToString(h.Sum(nil))
+
+	hash := sha256.Sum256([]byte(key))
+	hashed := hex.EncodeToString(hash[:])
+
 	return hashed
 }
