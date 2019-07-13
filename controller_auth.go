@@ -66,6 +66,8 @@ func authenticate(w http.ResponseWriter, r *http.Request) {
 	var user User
 	_ = json.NewDecoder(r.Body).Decode(&user)
 
+	//log.Println(user.Email, user.Password)
+
 	if len(user.Email) == 0 || len(user.Password) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Please provide name and password"))
