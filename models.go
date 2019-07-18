@@ -37,7 +37,7 @@ type UserResponse struct {
 
 type ErrorResponse struct {
 	Status        string  `json:"status"`
-	Error         string  `json:"error"`
+	Message       string  `json:"message"`
 	ExecutionTime float64 `json:"executionTime"`
 }
 

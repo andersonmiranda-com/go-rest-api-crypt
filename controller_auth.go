@@ -104,8 +104,10 @@ func authenticate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if count == 0 {
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("Invalid login"))
+		w.WriteHeader(http.StatusOK)
+		response := ErrorResponse{Status: "Error", Message: "Invalid Login", ExecutionTime: time.Since(processStart).Seconds() * 1000}
+		json.NewEncoder(w).Encode(response)
+		//w.Write([]byte("Invalid login"))
 		return
 	} else {
 		// ------------------------------------------------------------------------------
