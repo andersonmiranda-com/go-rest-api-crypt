@@ -12,10 +12,12 @@ import (
 )
 
 // Get all users
-/* func getUsers(w http.ResponseWriter, r *http.Request) {
+func getUsers(w http.ResponseWriter, r *http.Request) {
+	processStart := time.Now()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
-} */
+	response := GenericResponse{Status: "Under Construction", ExecutionTime: time.Since(processStart).Seconds() * 1000}
+	json.NewEncoder(w).Encode(response)
+}
 
 // Add new user
 func createUser(w http.ResponseWriter, r *http.Request) {
